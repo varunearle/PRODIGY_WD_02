@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch Web Application</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--dark-color);
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 400px;
+            text-align: center;
+        }
+        
+        .display {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        button {
+            border: none;
+            border-radius: 50px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .start-btn {
+            background-color: var(--primary-color);
+        }
+        
+        .pause-btn {
+            background-color: var(--secondary-color);
+        }
+        
+        .reset-btn {
+            background-color: var(--dark-color);
+        }
+        
+        .lap-btn {
+            background-color: var(--accent-color);
+        }
+        
+        .laps {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .lap-item:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+        
+        .lap-number {
+            font-weight: bold;
+        }
+        
+        .lap-time {
+            font-family: monospace;
+        }
+        
+        .heading {
+            color: var(--dark-color);
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="heading">Stopwatch</h1>
+        
+        <div class="display" id="display">00:00:00.000</div>
+        
+        <div class="buttons">
+            <button id="startBtn" class="start-btn">Start</button>
+            <button id="lapBtn" class="lap-btn" disabled>Lap</button>
+            <button id="resetBtn" class="reset-btn">Reset</button>
+        </div>
+        
+        <div class="laps" id="laps"></div>
+    </div>
+
+    <script>
+        // DOM elements
+        const displayElement = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+        const lapBtn = document.getElementById('lapBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const lapsContainer = document.getElementById('laps');
+        
+        // Stopwatch variables
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let running = false;
+        let lapCount = 0;
+        let lastLapTime = 0;
+        
+        // Format time as hh:mm:ss.ms
+        function formatTime(timeInMs) {
+            const ms = timeInMs % 1000;
+            const seconds = Math.floor((timeInMs / 1000) % 60);
+            const minutes = Math.floor((timeInMs / (1000 * 60)) % 60);
+            const hours = Math.floor((timeInMs / (1000 * 60 * 60)));
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+        }
+        
+        // Update display
+        function updateDisplay() {
+            const currentTime = running ? Date.now() - startTime + elapsedTime : elapsedTime;
+            displayElement.textContent = formatTime(currentTime);
+        }
+        
+        // Start/Pause function
+        function toggleStartPause() {
+            if (running) {
+                // Pause
+                clearInterval(timerInterval);
+                elapsedTime += Date.now() - startTime;
+                running = false;
+                startBtn.textContent = 'Resume';
+                startBtn.classList.add('pause-btn');
+                startBtn.classList.remove('start-btn');
+            } else {
+                // Start
+                startTime = Date.now();
+                running = true;
+                startBtn.textContent = 'Pause';
+                startBtn.classList.add('start-btn');
+                startBtn.classList.remove('pause-btn');
+                lapBtn.disabled = false;
+                
+                timerInterval = setInterval(updateDisplay, 10);
+            }
+        }
+        
+        // Reset function
+        function reset() {
+            clearInterval(timerInterval);
+            startTime = 0;
+            elapsedTime = 0;
+            running = false;
+            lapCount = 0;
+            lastLapTime = 0;
+            
+            displayElement.textContent = '00:00:00.000';
+            lapsContainer.innerHTML = '';
+            
+            startBtn.textContent = 'Start';
+            startBtn.classList.add('start-btn');
+            startBtn.classList.remove('pause-btn');
+            lapBtn.disabled = true;
+        }
+        
+        // Lap function
+        function recordLap() {
+            if (!running) return;
+            
+            const currentTime = Date.now() - startTime + elapsedTime;
+            const lapTime = currentTime - lastLapTime;
+            lastLapTime = currentTime;
+            lapCount++;
+            
+            const lapItem = document.createElement('div');
+            lapItem.className = 'lap-item';
+            
+            const lapNumber = document.createElement('span');
+            lapNumber.className = 'lap-number';
+            lapNumber.textContent = `Lap ${lapCount}`;
+            
+            const lapTimeElement = document.createElement('span');
+            lapTimeElement.className = 'lap-time';
+            lapTimeElement.textContent = formatTime(lapTime);
+            
+            lapItem.appendChild(lapNumber);
+            lapItem.appendChild(lapTimeElement);
+            
+            // Insert at the top
+            lapsContainer.insertBefore(lapItem, lapsContainer.firstChild);
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', toggleStartPause);
+        resetBtn.addEventListener('click', reset);
+        lapBtn.addEventListener('click', recordLap);
+    </script>
+</body>
+</html>
